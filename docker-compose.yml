@@ -1,20 +1,20 @@
 services:
   api1:
-    image: ghcr.io/krymancer/rinha-de-backend-2026-dotnet:f94ae65a1a7ec50419c8c4435889229f06899ea9
+    image: ghcr.io/krymancer/rinha-de-backend-2026-dotnet:23a02f0baea98ce2b51cd904b2c6be400d085b8c
     command: ["server", "/sockets/api1.sock", "/index.bin", "30", "80"]
     network_mode: none
     volumes: [sockets:/sockets]
     ulimits: { memlock: -1 }
     deploy: { resources: { limits: { cpus: "0.45", memory: "160MB" } } }
   api2:
-    image: ghcr.io/krymancer/rinha-de-backend-2026-dotnet:f94ae65a1a7ec50419c8c4435889229f06899ea9
+    image: ghcr.io/krymancer/rinha-de-backend-2026-dotnet:23a02f0baea98ce2b51cd904b2c6be400d085b8c
     command: ["server", "/sockets/api2.sock", "/index.bin", "30", "80"]
     network_mode: none
     volumes: [sockets:/sockets]
     ulimits: { memlock: -1 }
     deploy: { resources: { limits: { cpus: "0.45", memory: "160MB" } } }
   lb:
-    image: ghcr.io/krymancer/rinha-de-backend-2026-dotnet:f94ae65a1a7ec50419c8c4435889229f06899ea9
+    image: ghcr.io/krymancer/rinha-de-backend-2026-dotnet:23a02f0baea98ce2b51cd904b2c6be400d085b8c
     command: ["lb", "9999", "/sockets/api1.sock", "/sockets/api2.sock"]
     depends_on: [api1, api2]
     ports: ["9999:9999"]
