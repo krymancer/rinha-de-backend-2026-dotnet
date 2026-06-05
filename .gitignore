@@ -1,0 +1,8 @@
+bin/
+obj/
+src/bin/
+src/obj/
+*.bin
+*.gz
+refs.json
+_research/
