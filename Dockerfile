@@ -24,4 +24,6 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:9.0 AS final
 WORKDIR /app
 COPY --from=build /out/rinha /app/rinha
 COPY --from=build /index.bin /index.bin
+ENV DOTNET_GCHeapHardLimit=0x2000000
+ENV DOTNET_gcServer=0
 ENTRYPOINT ["/app/rinha"]

@@ -111,17 +111,28 @@ public sealed unsafe class IvfIndex : IDisposable
         // Read the whole file into a 64-byte-aligned native buffer. The 64-byte
         // alignment of the buffer base plus the 64-byte-aligned section offsets
         // guarantees `blocks` is 32-byte aligned (matches read_file_alloc + layout).
-        byte[] data = File.ReadAllBytes(path);
-        if (data.Length < HeaderSize)
-            throw new InvalidDataException($"index too small: {data.Length} < {HeaderSize}");
+        // Stream the file directly into the native aligned buffer in 1 MiB chunks.
+        // (Do NOT File.ReadAllBytes: a 96 MB managed copy + the native copy peaks
+        //  at ~192 MB and OOMs under the 160 MB container limit.)
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        long fsize = fs.Length;
+        if (fsize < HeaderSize)
+            throw new InvalidDataException($"index too small: {fsize} < {HeaderSize}");
 
-        nuint len = (nuint)data.Length;
+        nuint len = (nuint)fsize;
         if (posix_memalign(out IntPtr mem, 64, len == 0 ? 1 : len) != 0 || mem == IntPtr.Zero)
             throw new OutOfMemoryException("posix_memalign failed for index buffer");
 
         _buf = (byte*)mem;
         _bufLen = len;
-        new ReadOnlySpan<byte>(data, 0, data.Length).CopyTo(new Span<byte>(_buf, data.Length));
+        long roff = 0;
+        while (roff < fsize)
+        {
+            int want = (int)Math.Min(1 << 20, fsize - roff);
+            int got = fs.Read(new Span<byte>(_buf + roff, want));
+            if (got <= 0) throw new InvalidDataException("short read on index");
+            roff += got;
+        }
 
         // magic check
         for (int i = 0; i < 8; i++)
